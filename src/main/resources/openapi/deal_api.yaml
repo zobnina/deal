@@ -1,0 +1,313 @@
+openapi: 3.0.0
+servers:
+  - description: local
+    url: http://127.0.0.1
+    variables:
+      version:
+        default: v1
+info:
+  description: Сделка
+  version: "1.0.0"
+  title: API сервиса Сделка
+tags:
+  - name: "Deal Controller"
+    description: "Контроллер для работы сервиса Сделка"
+paths:
+  /deal/application:
+    post:
+      operationId: deal_application
+      summary: "Расчёт возможных условий кредита"
+      description: "Расчёт возможных условий кредита"
+      tags:
+        - Deal Controller
+      requestBody:
+        description: Параметры запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplicationRequestDto'
+        required: true
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLoanOfferDto'
+        422:
+          description: 'Unporcessable Entity'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+  /deal/offer:
+    put:
+      operationId: deal_offer
+      summary: "Выбор одного из предложений"
+      description: "Выбор одного из предложений"
+      tags:
+        - Deal Controller
+      requestBody:
+        description: Параметры запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanOfferDto'
+        required: true
+      responses:
+        204:
+          description: 'OK'
+  /deal/calculate/{applicationId}:
+    put:
+      operationId: deal_calculate_application_id
+      summary: "Завершение регистрации + полный подсчёт кредита"
+      description: "Завершение регистрации + полный подсчёт кредита"
+      tags:
+        - Deal Controller
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema:
+            type: number
+            format: int64
+      requestBody:
+        description: Параметры запроса
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinishRegistrationRequestDto'
+        required: true
+      responses:
+        204:
+          description: 'OK'
+components:
+  schemas:
+    LoanApplicationRequestDto:
+      type: object
+      description: 'Параметры запроса /offers'
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 10000
+          description: 'Сумма кредита'
+          example: 10000
+        term:
+          type: integer
+          minimum: 6
+          description: 'Срок кредита'
+          example: 6
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 30
+          pattern: '[A-Za-zЁёА-я]{2,30}'
+          description: 'Имя'
+          example: 'Ivan'
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 30
+          pattern: '[A-Za-zЁёА-я]{2,30}'
+          description: 'Фамилия'
+          example: 'Ivanov'
+        middleName:
+          type: string
+          minLength: 2
+          maxLength: 30
+          pattern: '[A-Za-zЁёА-я]{2,30}'
+          description: 'Отчество'
+          example: 'Ivanovich'
+          nullable: true
+        email:
+          type: string
+          format: email
+          minLength: 5
+          maxLength: 70
+          description: 'Email'
+          example: 'mail@domain.com'
+        birthdate:
+          type: string
+          format: date
+          description: 'Дата рождения'
+          example: '2000-01-01'
+          x-constraints: AdultBirthDate
+        passportSeries:
+          type: string
+          minLength: 4
+          maxLength: 4
+          pattern: '[0-9]{4}'
+          description: 'Серия паспорта'
+          example: '0000'
+        passportNumber:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '[0-9]{6}'
+          description: 'Номер паспорта'
+          example: '000000'
+    ListLoanOfferDto:
+      type: array
+      description: 'Список кредитных предложений'
+      items:
+        $ref: '#/components/schemas/LoanOfferDto'
+    LoanOfferDto:
+      type: object
+      description: 'Кредитное предложение'
+      properties:
+        applicationId:
+          type: integer
+          format: int64
+          description: 'ИД заявки'
+          example: 1
+        requestedAmount:
+          type: number
+          format: double
+          description: 'Запрошенная сумма'
+          example: 10000
+        totalAmount:
+          type: number
+          format: double
+          description: 'Полная сумма'
+          example: 10000
+        term:
+          type: integer
+          description: 'Срок'
+          example: 6
+        monthlyPayment:
+          type: number
+          format: double
+          description: 'Месячный платеж'
+          example: 10000
+        rate:
+          type: number
+          format: double
+          description: 'Ставка'
+          example: 10
+        isInsuranceEnabled:
+          type: boolean
+          description: 'Страховка включена'
+          example: true
+        isSalaryClient:
+          type: boolean
+          description: 'Зарплатный клиент'
+          example: true
+    FinishRegistrationRequestDto:
+      type: object
+      description: 'Параметры запроса /deal/calculate/{applicationId}'
+      properties:
+        gender:
+          $ref: '#/components/schemas/Gender'
+        maritalStatus:
+          $ref: '#/components/schemas/MaritalStatus'
+        dependentAmount:
+          type: integer
+          minimum: 0
+          description: 'Кол-во иждивенцев'
+          example: 1
+        passportIssueDate:
+          type: string
+          format: date
+          description: 'Дата выдачи паспорта'
+          example: '2000-01-01'
+        passportIssueBranch:
+          type: string
+          description: 'Отделение'
+          example: 'Отделение'
+        employment:
+          $ref: '#/components/schemas/EmploymentDto'
+        account:
+          type: string
+          pattern: '[0-9]{20}'
+          description: 'Номер счета'
+          example: '09876543211234567890'
+    EmploymentDto:
+      type: object
+      description: 'Трудоустройство'
+      properties:
+        employmentStatus:
+          $ref: '#/components/schemas/EmploymentStatus'
+        employerInn:
+          type: string
+          pattern: '[0-9]{10,12}'
+          description: 'ИНН'
+          example: '123456789012'
+        salary:
+          type: number
+          format: double
+          description: 'Размер ЗП'
+          example: 10000
+        position:
+          $ref: '#/components/schemas/Position'
+        workExperienceTotal:
+          type: integer
+          description: 'Общий трудовой стаж'
+          example: 5
+        workExperienceCurrent:
+          type: integer
+          description: 'Трудовой стаж на текущем месте'
+          example: 5
+      required:
+        - employmentStatus
+        - employerInn
+        - workExperienceTotal
+        - workExperienceCurrent
+    Gender:
+      type: string
+      enum:
+        - MALE
+        - FEMALE
+        - NON_BINARY
+      description: 'Пол'
+      example: 'MALE'
+    MaritalStatus:
+      type: string
+      enum:
+        - MARRIED
+        - DIVORCED
+        - SINGLE
+        - WIDOW_WIDOWER
+      description: 'Семейное положение'
+      example: 'MARRIED'
+    EmploymentStatus:
+      type: string
+      enum:
+        - UNEMPLOYED
+        - SELF_EMPLOYED
+        - EMPLOYED
+        - BUSINESS_OWNER
+      description: 'Статус трудоустройства'
+      example: 'EMPLOYED'
+    Position:
+      type: string
+      enum:
+        - WORKER
+        - MID_MANAGER
+        - TOP_MANAGER
+        - OWNER
+      description: 'Должность'
+      example: 'WORKER'
+    ErrorMessage:
+      type: object
+      description: 'Сообщение об ошибке'
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: 'Дата и время ошибки'
+        exception:
+          type: string
+          description: 'Исключение'
+        status:
+          type: integer
+          description: 'Статус код'
+        error:
+          type: string
+          description: 'Ошибка'
+        path:
+          type: string
+          description: 'Путь'
+        message:
+          type: string
+          description: 'Сообщение об ошибке'

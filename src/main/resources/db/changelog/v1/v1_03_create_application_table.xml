@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="v1_03_create_application_table_01" author="azobnina">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="application"/>
+            </not>
+        </preConditions>
+        <createTable tableName="application" remarks="Заявка">
+            <column name="id" remarks="ИД" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="application_id_pk"/>
+            </column>
+            <column name="client_id" remarks="Клиент" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="credit_id" remarks="Кредит" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" remarks="Статус" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="creation_date" remarks="Дата создания" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="applied_offer" remarks="Принятое предложение кредита" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sign_date" remarks="Дата подписания" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ses_code" remarks="Код ПЭП (Простая Электронная Подпись)" type="varchar">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status_history" remarks="История изменения статусов" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="application" baseColumnNames="client_id"
+                                 constraintName="application_client_fk" referencedTableName="client"
+                                 referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="application" baseColumnNames="credit_id"
+                                 constraintName="application_credit_fk" referencedTableName="credit"
+                                 referencedColumnNames="id"/>
+        <createIndex tableName="application" indexName="application_client_id_idx">
+            <column name="client_id"/>
+        </createIndex>
+        <createIndex tableName="application" indexName="application_credit_id_idx">
+            <column name="credit_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

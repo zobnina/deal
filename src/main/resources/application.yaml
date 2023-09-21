@@ -1,7 +1,7 @@
 server:
   error:
     include-stacktrace: always
-  port: ${SERVER_PORT}
+  port: ${SERVER_PORT:8081}
 
 spring:
   application:
@@ -43,6 +43,6 @@ spring:
     database-change-log-table: changelog
     database-change-log-lock-table: changeloglock
     default-schema: ${DATASOURCE_SCHEMA:${spring.jpa.properties.hibernate.default_schema}}
-    liquibase-schema: ${DATASOURCE_LIQUIBASE_SCHEMA:${spring.jpa.properties.hibernate.default_schema}}
+    liquibase-schema: ${DATASOURCE_LIQUIBASE_SCHEMA:${spring.jpa.properties.hibernate.default_schema}_liquibase}
     user: ${LIQUIBASE_USERNAME:${spring.datasource.username}}
     password: ${LIQUIBASE_PASSWORD:${spring.datasource.password}}

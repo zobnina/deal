@@ -11,8 +11,9 @@
                 <tableExists tableName="credit"/>
             </not>
         </preConditions>
+        <createSequence sequenceName="credit_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="credit" remarks="Кредит">
-            <column name="id" remarks="ИД" type="bigint" autoIncrement="true">
+            <column name="id" remarks="ИД" type="bigint" defaultValueSequenceNext="credit_id_seq">
                 <constraints primaryKey="true" primaryKeyName="credit_id_pk"/>
             </column>
             <column name="amount" remarks="Сумма" type="numeric">

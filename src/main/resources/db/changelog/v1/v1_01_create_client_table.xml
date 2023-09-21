@@ -11,8 +11,9 @@
                 <tableExists tableName="client"/>
             </not>
         </preConditions>
+        <createSequence sequenceName="client_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="client" remarks="Клиент">
-            <column name="id" remarks="ИД" type="bigint" autoIncrement="true">
+            <column name="id" remarks="ИД" type="bigint" defaultValueSequenceNext="client_id_seq">
                 <constraints primaryKey="true" primaryKeyName="client_id_pk"/>
             </column>
             <column name="last_name" remarks="Фамилия" type="varchar(30)">

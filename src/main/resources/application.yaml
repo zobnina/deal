@@ -46,3 +46,15 @@ spring:
     liquibase-schema: ${DATASOURCE_LIQUIBASE_SCHEMA:${spring.jpa.properties.hibernate.default_schema}_liquibase}
     user: ${LIQUIBASE_USERNAME:${spring.datasource.username}}
     password: ${LIQUIBASE_PASSWORD:${spring.datasource.password}}
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: ${FEIGN_CONNECT_TIMEOUT:5000}
+            readTimeout: ${FEIGN_READ_TIMEOUT:5000}
+            loggerLevel: ${FEIGN_LOG_LEVEL:full}
+
+application:
+  url:
+    conveyor: ${CONVEYOR_URL:http://localhost:8080}

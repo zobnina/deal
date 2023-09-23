@@ -29,24 +29,14 @@
             <column name="email" remarks="Email адрес" type="varchar(70)">
                 <constraints nullable="false"/>
             </column>
-            <column name="gender" remarks="Пол" type="varchar(10)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="marital_status" remarks="Семейное положение" type="varchar(15)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="dependent_amount" remarks="Количество иждивенцев" type="smallint">
-                <constraints nullable="false"/>
-            </column>
+            <column name="gender" remarks="Пол" type="varchar(10)"/>
+            <column name="marital_status" remarks="Семейное положение" type="varchar(15)"/>
+            <column name="dependent_amount" remarks="Количество иждивенцев" type="smallint"/>
             <column name="passport" remarks="Паспорт" type="jsonb">
                 <constraints nullable="false"/>
             </column>
-            <column name="employment" remarks="Работа" type="jsonb">
-                <constraints nullable="false"/>
-            </column>
-            <column name="account" remarks="Счет клиента" type="varchar(20)">
-                <constraints nullable="false"/>
-            </column>
+            <column name="employment" remarks="Работа" type="jsonb"/>
+            <column name="account" remarks="Счет клиента" type="varchar(20)"/>
         </createTable>
     </changeSet>
 </databaseChangeLog>

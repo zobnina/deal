@@ -59,6 +59,8 @@ paths:
       responses:
         204:
           description: 'OK'
+        404:
+          description: 'Not Found'
   /deal/calculate/{applicationId}:
     put:
       operationId: deal_calculate_application_id

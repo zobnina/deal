@@ -20,11 +20,13 @@
                 <constraints nullable="false"/>
             </column>
             <column name="credit_id" remarks="Кредит" type="bigint"/>
-            <column name="status" remarks="Статус" type="varchar(20)"/>
+            <column name="status" remarks="Статус" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
             <column name="creation_date" remarks="Дата создания" type="date">
                 <constraints nullable="false"/>
             </column>
-            <column name="applied_offer" remarks="Принятое предложение кредита" type="boolean"/>
+            <column name="applied_offer" remarks="Принятое предложение кредита" type="jsonb"/>
             <column name="sign_date" remarks="Дата подписания" type="date"/>
             <column name="ses_code" remarks="Код ПЭП (Простая Электронная Подпись)" type="varchar"/>
             <column name="status_history" remarks="История изменения статусов" type="jsonb"/>

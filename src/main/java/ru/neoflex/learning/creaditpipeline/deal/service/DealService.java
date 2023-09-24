@@ -1,5 +1,6 @@
 package ru.neoflex.learning.creaditpipeline.deal.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,11 @@ public class DealService {
     }
 
     public void offer(LoanOfferDto loanOfferDto) {
-        //ToDo
+        final Application application = applicationRepository.findById(loanOfferDto.getApplicationId())
+            .orElseThrow(EntityNotFoundException::new);
+        application.getStatusHistory().getStatusHistory().add(applicationMapper.toApplicationStatusHistory(application));
+        application.setStatus(application.getStatus());
+        application.setAppliedOffer(applicationMapper.toLoanOffer(loanOfferDto));
+        applicationRepository.save(application);
     }
 }

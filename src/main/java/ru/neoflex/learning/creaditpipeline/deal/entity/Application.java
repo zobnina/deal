@@ -49,12 +49,14 @@ public class Application {
 
     LocalDate creationDate;
 
-    Boolean appliedOffer;
+    @JdbcTypeCode(SqlTypes.JSON)
+    LoanOffer appliedOffer;
 
     LocalDate signDate;
 
     String sesCode;
 
+    @Builder.Default
     @JdbcTypeCode(SqlTypes.JSON)
-    ApplicationStatusHistoryList statusHistory;
+    ApplicationStatusHistoryList statusHistory = ApplicationStatusHistoryList.builder().build();
 }

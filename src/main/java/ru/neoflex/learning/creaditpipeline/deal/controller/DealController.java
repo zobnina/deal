@@ -26,7 +26,7 @@ public class DealController implements DealApi {
     }
 
     @Override
-    public ResponseEntity<Void> dealCalculateApplicationId(BigDecimal applicationId, FinishRegistrationRequestDto finishRegistrationRequestDto) {
+    public ResponseEntity<Void> dealCalculateApplicationId(Long applicationId, FinishRegistrationRequestDto finishRegistrationRequestDto) {
         dealService.calculate(applicationId, finishRegistrationRequestDto);
         return ResponseEntity.noContent().build();
     }

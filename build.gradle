@@ -71,9 +71,6 @@ openApiGenerate {
             useJakartaEe                  : "true",
             additionalModelTypeAnnotations: "@lombok.Builder @lombok.experimental.Accessors(chain = true) @lombok.AllArgsConstructor"
     ])
-    typeMappings.set([
-            double: "java.math.BigDecimal"
-    ])
 }
 
 compileJava.dependsOn tasks.named("openApiGenerate")

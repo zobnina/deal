@@ -14,5 +14,5 @@ import java.util.List;
 @AllArgsConstructor
 public class PaymentSchedule implements Serializable {
 
-    List<PaymentScheduleElement> paymentSchedule;
+    private List<PaymentScheduleElement> paymentScheduleList;
 }

@@ -73,7 +73,7 @@ paths:
           name: applicationId
           required: true
           schema:
-            type: number
+            type: integer
             format: int64
       requestBody:
         description: Параметры запроса
@@ -151,7 +151,7 @@ components:
       properties:
         amount:
           type: number
-          format: double
+          format: int64
           minimum: 10000
           description: 'Сумма кредита'
           example: 10000
@@ -181,7 +181,6 @@ components:
           pattern: '[A-Za-zЁёА-я]{2,30}'
           description: 'Отчество'
           example: 'Ivanovich'
-          nullable: true
         email:
           type: string
           format: email
@@ -225,12 +224,12 @@ components:
           example: 1
         requestedAmount:
           type: number
-          format: double
+          format: int64
           description: 'Запрошенная сумма'
           example: 10000
         totalAmount:
           type: number
-          format: double
+          format: int64
           description: 'Полная сумма'
           example: 10000
         term:
@@ -239,12 +238,12 @@ components:
           example: 6
         monthlyPayment:
           type: number
-          format: double
+          format: int64
           description: 'Месячный платеж'
           example: 10000
         rate:
           type: number
-          format: double
+          format: int64
           description: 'Ставка'
           example: 10
         isInsuranceEnabled:
@@ -290,7 +289,7 @@ components:
       properties:
         amount:
           type: number
-          format: double
+          format: int64
           minimum: 10000
           description: 'Сумма кредита'
           example: 10000
@@ -320,7 +319,6 @@ components:
           pattern: '[A-Za-zЁёА-я]{2,30}'
           description: 'Отчество'
           example: 'Ivanovich'
-          nullable: true
         gender:
           $ref: '#/components/schemas/Gender'
         birthdate:
@@ -394,7 +392,7 @@ components:
       properties:
         amount:
           type: number
-          format: double
+          format: int64
           description: 'Сумма кредита'
           example: 10000
         term:
@@ -403,17 +401,17 @@ components:
           example: 6
         monthlyPayment:
           type: number
-          format: double
+          format: int64
           description: 'Месячный платеж'
           example: 10000
         rate:
           type: number
-          format: double
+          format: int64
           description: 'Ставка'
           example: 10
         psk:
           type: number
-          format: double
+          format: int64
           description: 'Полная стоимость кредита'
           example: 10000
         isInsuranceEnabled:
@@ -443,22 +441,22 @@ components:
           example: '2000-01-01'
         totalPayment:
           type: number
-          format: double
+          format: int64
           description: 'Сумма платжеа'
           example: 1000
         interestPayment:
           type: number
-          format: double
+          format: int64
           description: 'На выплату процентов'
           example: 1000
         debtPayment:
           type: number
-          format: double
+          format: int64
           description: 'На выплату долга'
           example: 1000
         remainingDebt:
           type: number
-          format: double
+          format: int64
           description: 'Остаток долга'
           example: 1000
     EmploymentDto:
@@ -474,7 +472,7 @@ components:
           example: '123456789012'
         salary:
           type: number
-          format: double
+          format: int64
           description: 'Размер ЗП'
           example: 10000
         position:

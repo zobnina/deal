@@ -47,6 +47,8 @@ spring:
     user: ${LIQUIBASE_USERNAME:${spring.datasource.username}}
     password: ${LIQUIBASE_PASSWORD:${spring.datasource.password}}
   cloud:
+    compatibility-verifier:
+      enabled: false
     openfeign:
       client:
         config:

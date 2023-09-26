@@ -19,7 +19,6 @@ import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.ScoringDataDto;
 import ru.neoflex.learning.creaditpipeline.deal.repository.ApplicationRepository;
-import ru.neoflex.learning.creaditpipeline.deal.repository.ClientRepository;
 import ru.neoflex.learning.creaditpipeline.deal.repository.CreditRepository;
 
 import java.util.List;
@@ -37,16 +36,14 @@ public class DealService {
     private final CreditMapper creditMapper;
 
     private final ApplicationRepository applicationRepository;
-    private final ClientRepository clientRepository;
     private final CreditRepository creditRepository;
 
     private final ConveyorFeignClient conveyorFeignClient;
 
     public List<LoanOfferDto> application(LoanApplicationRequestDto loanApplicationRequestDto) {
-        final Client client = clientRepository.save(clientMapper.toClient(loanApplicationRequestDto));
-        log.info("application() - saved client = {}", client); //ToDo masking
+        final Client client = clientMapper.toClient(loanApplicationRequestDto);
         final Application application = applicationRepository.save(applicationMapper.createApplication(client));
-        log.info("application() - saved application = {}", application);
+        log.info("application() - saved application = {} and client = {}", application, client);
         final List<LoanOfferDto> conveyorResponse = conveyorFeignClient.conveyorOffers(loanApplicationRequestDto).getBody();
         ofNullable(conveyorResponse).ifPresent(c -> c.forEach(loanOfferDto -> loanOfferDto.setApplicationId(application.getId())));
         return conveyorResponse;

@@ -1,0 +1,3 @@
+--- создание схемы ---
+ALTER DATABASE deal SET DEFAULT_TRANSACTION_ISOLATION TO 'repeatable read';
+CREATE SCHEMA IF NOT EXISTS deal;

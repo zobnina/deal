@@ -1,12 +1,10 @@
 package ru.neoflex.learning.creaditpipeline.deal.integration;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.cloud.openfeign.FeignClientProperties;
 import ru.neoflex.learning.creaditpipeline.deal.api.ConveyorApi;
+import ru.neoflex.learning.creaditpipeline.deal.config.FeignClientConfiguration;
 
-@FeignClient(value = "conveyorClient",
-    url = "${application.url.conveyor}",
-    configuration = FeignClientProperties.FeignClientConfiguration.class)
-public class ConveyorFeignClient implements ConveyorApi {
-
+@FeignClient(value = "conveyorClient", url = "${application.url.conveyor}", configuration = FeignClientConfiguration.class)
+public interface ConveyorFeignClient extends ConveyorApi {
 }
+

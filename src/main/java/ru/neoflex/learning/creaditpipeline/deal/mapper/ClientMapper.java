@@ -8,6 +8,7 @@ import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 @Mapper(componentModel = "spring")
 public interface ClientMapper {
 
+    @Mapping(target = "birthDate", source = "birthdate")
     @Mapping(target = "passport.series", source = "passportSeries")
     @Mapping(target = "passport.number", source = "passportNumber")
     Client toClient(LoanApplicationRequestDto loanApplicationRequestDto);

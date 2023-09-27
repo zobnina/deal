@@ -70,7 +70,7 @@ openApiGenerate {
             serializableModel             : "true",
             java8                         : "false",
             javaVersion                   : "17",
-            additionalModelTypeAnnotations: "@lombok.Data @lombok.Builder @lombok.AllArgsConstructor"
+            additionalModelTypeAnnotations: "@lombok.Data @lombok.Builder @lombok.NoArgsConstructor @lombok.AllArgsConstructor"
     ])
 }
 

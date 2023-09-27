@@ -1,7 +1,7 @@
 package ru.neoflex.learning.creaditpipeline.deal.test.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import ru.neoflex.learning.creaditpipeline.deal.dictionary.ApplicationStatus;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Application;
+import ru.neoflex.learning.creaditpipeline.deal.entity.ApplicationStatusHistory;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Client;
+import ru.neoflex.learning.creaditpipeline.deal.entity.LoanOffer;
+import ru.neoflex.learning.creaditpipeline.deal.entity.Passport;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
 import ru.neoflex.learning.creaditpipeline.deal.repository.ApplicationRepository;
@@ -39,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles(value = "test")
@@ -49,7 +53,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = TestConfig.class)
 class DealControllerTest {
 
-    private final JsonMapper jsonMapper = JsonMapper.builder().findAndAddModules().build();
     private final Faker faker = new Faker();
 
     @Autowired
@@ -57,6 +60,9 @@ class DealControllerTest {
 
     @Autowired
     ApplicationRepository applicationRepository;
+
+    @Autowired
+    ObjectMapper jsonMapper;
 
     @Test
     @DisplayName("POST /deal/application")
@@ -105,6 +111,70 @@ class DealControllerTest {
         assertEquals(request.getPassportNumber(), client.getPassport().getNumber());
     }
 
+    @Test
+    @DisplayName("PUT /deal/offer 404")
+    void offer404Test() throws Exception {
+
+        final LoanOfferDto request = getLoanOfferDto();
+
+        mockMvc.perform(put("/deal/offer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsBytes(request)))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("PUT /deal/offer")
+    void offerTest() throws Exception {
+
+        final Application application = applicationRepository.save(getApplication());
+        final LoanOfferDto request = getLoanOfferDto().applicationId(application.getId());
+
+        mockMvc.perform(put("/deal/offer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsBytes(request)))
+            .andExpect(status().isNoContent());
+
+        final Optional<Application> optional = applicationRepository.findById(application.getId());
+        assertTrue(optional.isPresent());
+        final Application fromDb = optional.get();
+        assertEquals(ApplicationStatus.APPROVED, fromDb.getStatus());
+        assertEquals(1, fromDb.getStatusHistory().getStatusHistory().size());
+        final ApplicationStatusHistory applicationStatusHistory = fromDb.getStatusHistory().getStatusHistory().get(0);
+        assertEquals(ApplicationStatus.PREAPPROVAL, applicationStatusHistory.getStatus());
+        assertEquals(LocalDate.now(), applicationStatusHistory.getTime().toLocalDate());
+        final LoanOffer appliedOffer = fromDb.getAppliedOffer();
+        assertNotNull(appliedOffer);
+        assertEquals(request.getRequestedAmount(), appliedOffer.getRequestedAmount());
+        assertEquals(request.getTotalAmount(), appliedOffer.getTotalAmount());
+        assertEquals(request.getTerm(), appliedOffer.getTerm());
+        assertEquals(request.getMonthlyPayment(), appliedOffer.getMonthlyPayment());
+        assertEquals(request.getRate(), appliedOffer.getRate());
+        assertEquals(request.getIsInsuranceEnabled(), appliedOffer.getIsInsuranceEnabled());
+        assertEquals(request.getIsSalaryClient(), appliedOffer.getIsSalaryClient());
+    }
+
+    private Application getApplication() {
+        return Application.builder()
+            .client(getClient())
+            .status(ApplicationStatus.PREAPPROVAL)
+            .creationDate(LocalDate.now())
+            .build();
+    }
+
+    private Client getClient() {
+        return Client.builder()
+            .lastName(faker.name().lastName())
+            .firstName(faker.name().firstName())
+            .email(faker.internet().emailAddress())
+            .birthDate(faker.date().birthday().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+            .passport(Passport.builder()
+                .series(faker.number().digits(4))
+                .number(faker.number().digits(6))
+                .build())
+            .build();
+    }
+
     private LoanApplicationRequestDto getLoanApplicationRequestDto() {
         return LoanApplicationRequestDto.builder()
             .amount(BigDecimal.valueOf(faker.number().numberBetween(10000, 1000000)))
@@ -123,6 +193,19 @@ class DealControllerTest {
             .requestedAmount(loanApplicationRequestDto.getAmount())
             .totalAmount(BigDecimal.valueOf(faker.number().numberBetween(10000, 1000000)))
             .term(loanApplicationRequestDto.getTerm())
+            .monthlyPayment(BigDecimal.valueOf(faker.number().numberBetween(10000, 1000000)))
+            .rate(BigDecimal.valueOf(faker.number().numberBetween(5, 15)))
+            .isInsuranceEnabled(faker.bool().bool())
+            .isSalaryClient(faker.bool().bool())
+            .build();
+    }
+
+    private LoanOfferDto getLoanOfferDto() {
+        return LoanOfferDto.builder()
+            .applicationId(faker.number().randomNumber())
+            .requestedAmount(BigDecimal.valueOf(faker.number().numberBetween(10000, 1000000)))
+            .totalAmount(BigDecimal.valueOf(faker.number().numberBetween(10000, 1000000)))
+            .term(faker.number().numberBetween(6, 360))
             .monthlyPayment(BigDecimal.valueOf(faker.number().numberBetween(10000, 1000000)))
             .rate(BigDecimal.valueOf(faker.number().numberBetween(5, 15)))
             .isInsuranceEnabled(faker.bool().bool())

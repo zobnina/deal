@@ -57,6 +57,11 @@ spring:
             readTimeout: ${FEIGN_READ_TIMEOUT:5000}
             loggerLevel: ${FEIGN_LOG_LEVEL:full}
 
+logging:
+  level:
+    ru.neoflex.learning.creditpipeline.deal: ${LOG_LEVEL:debug}
+    ru.neoflex.learning.creditpipeline.deal.feign: ${LOG_LEVEL:debug}
+
 application:
   url:
     conveyor: ${CONVEYOR_URL:http://localhost:8080}

@@ -10,7 +10,6 @@ import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
 import ru.neoflex.learning.creaditpipeline.deal.service.DealService;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Validated

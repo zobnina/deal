@@ -50,8 +50,7 @@ public class DealService {
     }
 
     public void calculate(Long applicationId, FinishRegistrationRequestDto finishRegistrationRequestDto) {
-        final Application application = applicationRepository.findById(applicationId)
-            .orElseThrow(EntityNotFoundException::new);
+        final Application application = getByIdOrThrow(applicationId);
         final ScoringDataDto scoringDataDto = conveyorMapper.toScoringDataDto(finishRegistrationRequestDto);
         final CreditDto creditDto = conveyorFeignClient.conveyorCalculation(scoringDataDto).getBody();
         final Credit credit = creditRepository.save(creditMapper.toCredit(creditDto));
@@ -61,11 +60,15 @@ public class DealService {
     }
 
     public void offer(LoanOfferDto loanOfferDto) {
-        final Application application = applicationRepository.findById(loanOfferDto.getApplicationId())
-            .orElseThrow(EntityNotFoundException::new);
+        final Application application = getByIdOrThrow(loanOfferDto.getApplicationId());
         updateStatus(application, ApplicationStatus.APPROVED);
         application.setAppliedOffer(applicationMapper.toLoanOffer(loanOfferDto));
         applicationRepository.save(application);
+    }
+
+    private Application getByIdOrThrow(Long loanOfferDto) {
+        return applicationRepository.findById(loanOfferDto)
+            .orElseThrow(EntityNotFoundException::new);
     }
 
     private void updateStatus(Application application, ApplicationStatus status) {

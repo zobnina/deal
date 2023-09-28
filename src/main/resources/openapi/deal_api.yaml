@@ -197,7 +197,6 @@ components:
           format: date
           description: 'Дата рождения'
           example: '2000-01-01'
-          x-constraints: AdultBirthDate
         passportSeries:
           type: string
           minLength: 4

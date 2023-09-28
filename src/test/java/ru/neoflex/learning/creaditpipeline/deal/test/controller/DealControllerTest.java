@@ -6,7 +6,6 @@ import com.github.javafaker.Faker;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,21 +18,34 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import ru.neoflex.learning.creaditpipeline.deal.dictionary.ApplicationStatus;
+import ru.neoflex.learning.creaditpipeline.deal.dictionary.CreditStatus;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Application;
 import ru.neoflex.learning.creaditpipeline.deal.entity.ApplicationStatusHistory;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Client;
+import ru.neoflex.learning.creaditpipeline.deal.entity.Credit;
 import ru.neoflex.learning.creaditpipeline.deal.entity.LoanOffer;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Passport;
+import ru.neoflex.learning.creaditpipeline.deal.entity.PaymentScheduleElement;
+import ru.neoflex.learning.creaditpipeline.deal.model.CreditDto;
+import ru.neoflex.learning.creaditpipeline.deal.model.EmploymentDto;
+import ru.neoflex.learning.creaditpipeline.deal.model.EmploymentStatus;
+import ru.neoflex.learning.creaditpipeline.deal.model.FinishRegistrationRequestDto;
+import ru.neoflex.learning.creaditpipeline.deal.model.Gender;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
+import ru.neoflex.learning.creaditpipeline.deal.model.MaritalStatus;
+import ru.neoflex.learning.creaditpipeline.deal.model.PaymentScheduleElementDto;
+import ru.neoflex.learning.creaditpipeline.deal.model.Position;
 import ru.neoflex.learning.creaditpipeline.deal.repository.ApplicationRepository;
 import ru.neoflex.learning.creaditpipeline.deal.test.TestConfig;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -46,13 +58,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles(value = "test")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureMockMvc
 @AutoConfigureWireMock
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @SpringBootTest(classes = TestConfig.class)
 class DealControllerTest {
 
+    public static final LocalDate NOW = LocalDate.now();
     private final Faker faker = new Faker();
 
     @Autowired
@@ -101,7 +113,7 @@ class DealControllerTest {
         assertTrue(optional.isPresent());
         final Application application = optional.get();
         assertEquals(ApplicationStatus.PREAPPROVAL, application.getStatus());
-        assertEquals(LocalDate.now(), application.getCreationDate());
+        assertEquals(NOW, application.getCreationDate());
         final Client client = application.getClient();
         assertEquals(request.getFirstName(), client.getFirstName());
         assertEquals(request.getLastName(), client.getLastName());
@@ -142,7 +154,7 @@ class DealControllerTest {
         assertEquals(1, fromDb.getStatusHistory().getStatusHistory().size());
         final ApplicationStatusHistory applicationStatusHistory = fromDb.getStatusHistory().getStatusHistory().get(0);
         assertEquals(ApplicationStatus.PREAPPROVAL, applicationStatusHistory.getStatus());
-        assertEquals(LocalDate.now(), applicationStatusHistory.getTime().toLocalDate());
+        assertEquals(NOW, applicationStatusHistory.getTime().toLocalDate());
         final LoanOffer appliedOffer = fromDb.getAppliedOffer();
         assertNotNull(appliedOffer);
         assertEquals(request.getRequestedAmount(), appliedOffer.getRequestedAmount());
@@ -154,11 +166,119 @@ class DealControllerTest {
         assertEquals(request.getIsSalaryClient(), appliedOffer.getIsSalaryClient());
     }
 
+    @Test
+    @DisplayName("PUT /deal/calculate 404")
+    void calculate404Test() throws Exception {
+
+        final FinishRegistrationRequestDto request = getFinishRegistrationRequestDto();
+
+        mockMvc.perform(put("/deal/calculate/" + faker.number().randomNumber())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsBytes(request)))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("PUT /deal/calculate")
+    @Transactional
+    void calculateTest() throws Exception {
+
+        final Application application = applicationRepository.save(getApplication().setStatus(ApplicationStatus.APPROVED));
+        final FinishRegistrationRequestDto request = getFinishRegistrationRequestDto();
+        final CreditDto creditDto = getCreditDto();
+
+        stubFor(WireMock.post(urlPathEqualTo("/conveyor/calculation"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.OK.value())
+                .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .withBody(jsonMapper.writeValueAsString(creditDto))));
+
+        mockMvc.perform(put("/deal/calculate/" + application.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsBytes(request)))
+            .andExpect(status().isNoContent());
+
+        final Optional<Application> optional = applicationRepository.findById(application.getId());
+        assertTrue(optional.isPresent());
+        final Application fromDb = optional.get();
+        assertEquals(ApplicationStatus.CC_APPROVED, fromDb.getStatus());
+        final ApplicationStatusHistory applicationStatusHistory = fromDb.getStatusHistory().getStatusHistory().get(fromDb.getStatusHistory().getStatusHistory().size() - 1);
+        assertEquals(ApplicationStatus.APPROVED, applicationStatusHistory.getStatus());
+        assertEquals(NOW, applicationStatusHistory.getTime().toLocalDate());
+        final Credit credit = application.getCredit();
+        assertEquals(creditDto.getAmount(), credit.getAmount());
+        assertEquals(creditDto.getTerm(), credit.getTerm());
+        assertEquals(creditDto.getMonthlyPayment(), credit.getMonthlyPayment());
+        assertEquals(creditDto.getRate(), credit.getRate());
+        assertEquals(creditDto.getPsk(), credit.getPsk());
+        assertEquals(creditDto.getIsInsuranceEnabled(), credit.getIsInsuranceEnabled());
+        assertEquals(creditDto.getIsSalaryClient(), credit.getIsSalaryClient());
+        assertEquals(CreditStatus.CALCULATED, credit.getCreditStatus());
+        assertNotNull(credit.getPaymentSchedule());
+        final List<PaymentScheduleElement> paymentScheduleList = credit.getPaymentSchedule().getPaymentScheduleList();
+        assertEquals(creditDto.getPaymentSchedule().size(), paymentScheduleList.size());
+        final PaymentScheduleElementDto paymentScheduleElementDto = creditDto.getPaymentSchedule().get(0);
+        final PaymentScheduleElement paymentScheduleElement = paymentScheduleList.get(0);
+        assertEquals(paymentScheduleElementDto.getNumber(), paymentScheduleElement.getNumber());
+        assertEquals(paymentScheduleElementDto.getDate(), paymentScheduleElement.getDate());
+        assertEquals(paymentScheduleElementDto.getTotalPayment(), paymentScheduleElement.getTotalPayment());
+        assertEquals(paymentScheduleElementDto.getInterestPayment(), paymentScheduleElement.getInterestPayment());
+        assertEquals(paymentScheduleElementDto.getDebtPayment(), paymentScheduleElement.getDebtPayment());
+        assertEquals(paymentScheduleElementDto.getRemainingDebt(), paymentScheduleElement.getRemainingDebt());
+    }
+
+    private CreditDto getCreditDto() {
+        return CreditDto.builder()
+            .amount(BigDecimal.valueOf(faker.number().randomNumber()))
+            .term(faker.number().randomDigitNotZero())
+            .monthlyPayment(BigDecimal.valueOf(faker.number().randomNumber()))
+            .rate(BigDecimal.valueOf(faker.number().randomDigit()))
+            .psk(BigDecimal.valueOf(faker.number().randomNumber()))
+            .isInsuranceEnabled(faker.bool().bool())
+            .isSalaryClient(faker.bool().bool())
+            .paymentSchedule(List.of(getPaymentScheduleElementDto()))
+            .build();
+    }
+
+    private PaymentScheduleElementDto getPaymentScheduleElementDto() {
+        return PaymentScheduleElementDto.builder()
+            .number(faker.number().randomDigit())
+            .date(toLocalDate(faker.date().past(365, TimeUnit.DAYS)))
+            .totalPayment(BigDecimal.valueOf(faker.number().randomNumber()))
+            .interestPayment(BigDecimal.valueOf(faker.number().randomNumber()))
+            .debtPayment(BigDecimal.valueOf(faker.number().randomNumber()))
+            .remainingDebt(BigDecimal.valueOf(faker.number().randomNumber()))
+            .build();
+    }
+
+    private FinishRegistrationRequestDto getFinishRegistrationRequestDto() {
+        return FinishRegistrationRequestDto.builder()
+            .gender(Gender.MALE)
+            .maritalStatus(MaritalStatus.SINGLE)
+            .dependentAmount(faker.number().randomDigit())
+            .passportIssueDate(toLocalDate(faker.date().past(365, TimeUnit.DAYS)))
+            .passportIssueBranch(faker.address().fullAddress())
+            .employment(getEmploymentDto())
+            .account(faker.number().digits(20))
+            .build();
+    }
+
+    private EmploymentDto getEmploymentDto() {
+        return EmploymentDto.builder()
+            .employmentStatus(EmploymentStatus.EMPLOYED)
+            .employerInn(faker.number().digits(12))
+            .salary(BigDecimal.valueOf(faker.number().randomNumber()))
+            .position(Position.WORKER)
+            .workExperienceTotal(faker.number().randomDigitNotZero())
+            .workExperienceCurrent(faker.number().randomDigitNotZero())
+            .build();
+    }
+
     private Application getApplication() {
         return Application.builder()
             .client(getClient())
             .status(ApplicationStatus.PREAPPROVAL)
-            .creationDate(LocalDate.now())
+            .creationDate(NOW)
             .build();
     }
 
@@ -167,7 +287,7 @@ class DealControllerTest {
             .lastName(faker.name().lastName())
             .firstName(faker.name().firstName())
             .email(faker.internet().emailAddress())
-            .birthDate(faker.date().birthday().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+            .birthDate(toLocalDate(faker.date().birthday()))
             .passport(Passport.builder()
                 .series(faker.number().digits(4))
                 .number(faker.number().digits(6))
@@ -182,10 +302,14 @@ class DealControllerTest {
             .firstName(faker.name().firstName())
             .lastName(faker.name().lastName())
             .email(faker.internet().emailAddress())
-            .birthdate(faker.date().birthday().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+            .birthdate(toLocalDate(faker.date().birthday()))
             .passportSeries(faker.number().digits(4))
             .passportNumber(faker.number().digits(6))
             .build();
+    }
+
+    private LocalDate toLocalDate(Date date) {
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
     private LoanOfferDto getLoanOfferDto(LoanApplicationRequestDto loanApplicationRequestDto) {

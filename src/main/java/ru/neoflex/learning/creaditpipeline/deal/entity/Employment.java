@@ -1,10 +1,12 @@
 package ru.neoflex.learning.creaditpipeline.deal.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import ru.neoflex.learning.creaditpipeline.deal.model.EmploymentStatus;
 import ru.neoflex.learning.creaditpipeline.deal.model.Position;
 
@@ -13,23 +15,24 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Employment implements Serializable {
 
     @JsonProperty(value = "employment_status")
-    private EmploymentStatus employmentStatus;
+    EmploymentStatus employmentStatus;
 
     @JsonProperty(value = "employer_inn")
-    private String employerInn;
+    String employerInn;
 
-    private BigDecimal salary;
+    BigDecimal salary;
 
-    private Position position;
+    Position position;
 
     @JsonProperty(value = "work_experience_total")
-    private Integer workExperienceTotal;
+    Integer workExperienceTotal;
 
     @JsonProperty(value = "work_experience_current")
-    private Integer workExperienceCurrent;
+    Integer workExperienceCurrent;
 }

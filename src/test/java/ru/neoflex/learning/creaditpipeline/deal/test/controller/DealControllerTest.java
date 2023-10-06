@@ -1,24 +1,42 @@
 package ru.neoflex.learning.creaditpipeline.deal.test.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.KafkaMessageListenerContainer;
+import org.springframework.kafka.listener.MessageListener;
+import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import ru.neoflex.learning.creaditpipeline.deal.dictionary.ApplicationStatus;
 import ru.neoflex.learning.creaditpipeline.deal.dictionary.CreditStatus;
+import ru.neoflex.learning.creaditpipeline.deal.dictionary.Theme;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Application;
 import ru.neoflex.learning.creaditpipeline.deal.entity.ApplicationStatusHistory;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Client;
@@ -27,6 +45,7 @@ import ru.neoflex.learning.creaditpipeline.deal.entity.LoanOffer;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Passport;
 import ru.neoflex.learning.creaditpipeline.deal.entity.PaymentScheduleElement;
 import ru.neoflex.learning.creaditpipeline.deal.model.CreditDto;
+import ru.neoflex.learning.creaditpipeline.deal.model.EmailMessage;
 import ru.neoflex.learning.creaditpipeline.deal.model.EmploymentDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.EmploymentStatus;
 import ru.neoflex.learning.creaditpipeline.deal.model.FinishRegistrationRequestDto;
@@ -36,7 +55,9 @@ import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.MaritalStatus;
 import ru.neoflex.learning.creaditpipeline.deal.model.PaymentScheduleElementDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.Position;
+import ru.neoflex.learning.creaditpipeline.deal.properties.DossierTopicProperties;
 import ru.neoflex.learning.creaditpipeline.deal.repository.ApplicationRepository;
+import ru.neoflex.learning.creaditpipeline.deal.service.DossierProducer;
 import ru.neoflex.learning.creaditpipeline.deal.test.TestConfig;
 
 import java.math.BigDecimal;
@@ -44,27 +65,36 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles(value = "test")
 @AutoConfigureMockMvc
-@AutoConfigureWireMock
+@AutoConfigureWireMock(port = 8082)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @SpringBootTest(classes = TestConfig.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DealControllerTest {
 
     public static final LocalDate NOW = LocalDate.now();
+    public static final int DELAY = 5000;
     private final Faker faker = new Faker();
 
     @Autowired
@@ -75,6 +105,59 @@ class DealControllerTest {
 
     @Autowired
     ObjectMapper jsonMapper;
+
+    @Autowired
+    PostgreSQLContainer<?> postgresContainer;
+
+    @Autowired
+    KafkaContainer kafkaContainer;
+
+    @Autowired
+    DossierTopicProperties dossierTopicProperties;
+
+    @SpyBean
+    DossierProducer dossierProducer;
+
+    BlockingQueue<ConsumerRecord<String, String>> records;
+    KafkaMessageListenerContainer<String, String> container;
+
+    @BeforeAll
+    void setupKafkaConsumer() {
+
+        var consumerFactory = new DefaultKafkaConsumerFactory<>(getConsumerProperties());
+        final ContainerProperties containerProperties = new ContainerProperties(
+            dossierTopicProperties.getApplicationDenied(),
+            dossierTopicProperties.getCreateDocuments(),
+            dossierTopicProperties.getCreditIssued(),
+            dossierTopicProperties.getSendSes(),
+            dossierTopicProperties.getSendDocuments(),
+            dossierTopicProperties.getFinishRegistration()
+        );
+        container = new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
+        records = new LinkedBlockingQueue<>();
+        container.setupMessageListener((MessageListener<String, String>) records::add);
+        container.start();
+        ContainerTestUtils.waitForAssignment(container, 6);
+
+        assertAll(
+            () -> assertTrue(postgresContainer.isCreated()),
+            () -> assertTrue(postgresContainer.isRunning())
+        );
+        assertAll(
+            () -> assertTrue(kafkaContainer.isCreated()),
+            () -> assertTrue(kafkaContainer.isRunning())
+        );
+    }
+
+    @AfterEach
+    void clean() {
+        records.clear();
+    }
+
+    @AfterAll
+    void tearDown() {
+        container.stop();
+    }
 
     @Test
     @DisplayName("POST /deal/application")
@@ -137,6 +220,7 @@ class DealControllerTest {
 
     @Test
     @DisplayName("PUT /deal/offer")
+    @Transactional
     void offerTest() throws Exception {
 
         final Application application = applicationRepository.save(getApplication());
@@ -164,6 +248,10 @@ class DealControllerTest {
         assertEquals(request.getRate(), appliedOffer.getRate());
         assertEquals(request.getIsInsuranceEnabled(), appliedOffer.getIsInsuranceEnabled());
         assertEquals(request.getIsSalaryClient(), appliedOffer.getIsSalaryClient());
+
+        final Theme theme = Theme.FINISH_REGISTRATION;
+        final String topic = dossierTopicProperties.getFinishRegistration();
+        testProducer(fromDb, theme, topic);
     }
 
     @Test
@@ -225,6 +313,33 @@ class DealControllerTest {
         assertEquals(paymentScheduleElementDto.getInterestPayment(), paymentScheduleElement.getInterestPayment());
         assertEquals(paymentScheduleElementDto.getDebtPayment(), paymentScheduleElement.getDebtPayment());
         assertEquals(paymentScheduleElementDto.getRemainingDebt(), paymentScheduleElement.getRemainingDebt());
+    }
+
+    @Test
+    @Transactional
+    void dealDocumentApplicationIdCodeTest() throws Exception {
+        final Application application = applicationRepository.save(getApplication().setClient(getClient()));
+        mockMvc.perform(post("/deal/document/" + application.getId() + "/code"))
+            .andExpect(status().isAccepted());
+        testProducer(application, Theme.CREDIT_ISSUED, dossierTopicProperties.getCreditIssued());
+    }
+
+    @Test
+    @Transactional
+    void dealDocumentApplicationIdSendTest() throws Exception {
+        final Application application = applicationRepository.save(getApplication().setClient(getClient()));
+        mockMvc.perform(post("/deal/document/" + application.getId() + "/send"))
+            .andExpect(status().isAccepted());
+        testProducer(application, Theme.SEND_DOCUMENTS, dossierTopicProperties.getSendDocuments());
+    }
+
+    @Test
+    @Transactional
+    void dealDocumentApplicationIdSignTest() throws Exception {
+        final Application application = applicationRepository.save(getApplication().setClient(getClient()));
+        mockMvc.perform(post("/deal/document/" + application.getId() + "/sign"))
+            .andExpect(status().isAccepted());
+        testProducer(application, Theme.SEND_SES, dossierTopicProperties.getSendSes());
     }
 
     private CreditDto getCreditDto() {
@@ -335,5 +450,25 @@ class DealControllerTest {
             .isInsuranceEnabled(faker.bool().bool())
             .isSalaryClient(faker.bool().bool())
             .build();
+    }
+
+    private Map<String, Object> getConsumerProperties() {
+
+        return Map.of(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
+            ConsumerConfig.GROUP_ID_CONFIG, "consumer",
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+    }
+
+    private void testProducer(Application application, Theme theme, String topic) throws JsonProcessingException {
+
+        verify(dossierProducer, after(DELAY)).send(Mockito.any(), same(theme), same(topic));
+        final ConsumerRecord<String, String> record = records.poll();
+        assertNotNull(record);
+        EmailMessage emailMessage = jsonMapper.readValue(record.value(), EmailMessage.class);
+        assertEquals(application.getId(), emailMessage.getApplicationId());
+        assertEquals(theme, emailMessage.getTheme());
+        assertEquals(application.getClient().getEmail(), emailMessage.getAddress());
     }
 }

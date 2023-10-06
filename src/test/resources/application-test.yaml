@@ -53,7 +53,19 @@ spring:
           default:
             connectTimeout: 5000
             readTimeout: 5000
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: ru.neoflex.learning.creaditpipeline.deal.serialization.EmailMessageSerializer
 
 application:
   url:
-    conveyor: http://localhost:8080
+    conveyor: http://localhost:8082
+  topic:
+    finish-registration: finish-registration
+    create-documents: create-documents
+    send-documents: send-documents
+    send-ses: send-ses
+    credit-issued: credit-issued
+    application-denied: application-denied

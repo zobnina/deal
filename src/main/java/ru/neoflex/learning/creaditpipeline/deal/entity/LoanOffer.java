@@ -1,30 +1,33 @@
 package ru.neoflex.learning.creaditpipeline.deal.entity;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoanOffer implements Serializable {
 
-    private BigDecimal requestedAmount;
+    BigDecimal requestedAmount;
 
-    private BigDecimal totalAmount;
+    BigDecimal totalAmount;
 
-    private Integer term;
+    Integer term;
 
-    private BigDecimal monthlyPayment;
+    BigDecimal monthlyPayment;
 
-    private BigDecimal rate;
+    BigDecimal rate;
 
-    private Boolean isInsuranceEnabled;
+    Boolean isInsuranceEnabled;
 
-    private Boolean isSalaryClient;
+    Boolean isSalaryClient;
 }

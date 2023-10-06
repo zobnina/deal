@@ -7,12 +7,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -26,6 +28,7 @@ import java.util.Objects;
 @Setter
 @ToString
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -34,33 +37,33 @@ public class Client {
     @Id
     @SequenceGenerator(name = "client_id_seq", sequenceName = "client_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "client_id_seq")
-    private Long id;
+    Long id;
 
-    private String lastName;
+    String lastName;
 
-    private String firstName;
+    String firstName;
 
-    private String middleName;
+    String middleName;
 
-    private LocalDate birthDate;
+    LocalDate birthDate;
 
-    private String email;
-
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+    String email;
 
     @Enumerated(EnumType.STRING)
-    private MaritalStatus maritalStatus;
+    Gender gender;
 
-    private Short dependentAmount;
+    @Enumerated(EnumType.STRING)
+    MaritalStatus maritalStatus;
+
+    Short dependentAmount;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    private Passport passport;
+    Passport passport;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    private Employment employment;
+    Employment employment;
 
-    private String account;
+    String account;
 
     @Override
     public boolean equals(Object o) {

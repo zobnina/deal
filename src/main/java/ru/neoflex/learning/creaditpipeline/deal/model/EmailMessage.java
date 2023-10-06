@@ -1,22 +1,23 @@
 package ru.neoflex.learning.creaditpipeline.deal.model;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import ru.neoflex.learning.creaditpipeline.deal.dictionary.Theme;
-
-import java.util.UUID;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmailMessage {
 
-    private String address;
+    String address;
 
-    private Theme theme;
+    Theme theme;
 
-    private Long applicationId;
+    Long applicationId;
 }

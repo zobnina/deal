@@ -9,6 +9,7 @@ import ru.neoflex.learning.creaditpipeline.deal.model.FinishRegistrationRequestD
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
 import ru.neoflex.learning.creaditpipeline.deal.service.DealService;
+import ru.neoflex.learning.creaditpipeline.deal.service.DocumentService;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.List;
 public class DealController implements DealApi {
 
     private final DealService dealService;
+    private final DocumentService documentService;
 
     @Override
     public ResponseEntity<List<LoanOfferDto>> dealApplication(LoanApplicationRequestDto loanApplicationRequestDto) {
@@ -28,6 +30,24 @@ public class DealController implements DealApi {
     public ResponseEntity<Void> dealCalculateApplicationId(Long applicationId, FinishRegistrationRequestDto finishRegistrationRequestDto) {
         dealService.calculate(applicationId, finishRegistrationRequestDto);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> dealDocumentApplicationIdCode(Long applicationId) {
+        documentService.code(applicationId);
+        return ResponseEntity.accepted().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> dealDocumentApplicationIdSend(Long applicationId) {
+        documentService.send(applicationId);
+        return ResponseEntity.accepted().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> dealDocumentApplicationIdSign(Long applicationId) {
+        documentService.sign(applicationId);
+        return ResponseEntity.accepted().build();
     }
 
     @Override

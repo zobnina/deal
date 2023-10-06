@@ -56,6 +56,11 @@ spring:
             connectTimeout: ${FEIGN_CONNECT_TIMEOUT:5000}
             readTimeout: ${FEIGN_READ_TIMEOUT:5000}
             loggerLevel: ${FEIGN_LOG_LEVEL:full}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-serializer: ru.neoflex.learning.creaditpipeline.deal.serialization.EmailMessageSerializer
 
 logging:
   level:
@@ -65,3 +70,10 @@ logging:
 application:
   url:
     conveyor: ${CONVEYOR_URL:http://localhost:8080}
+  topic:
+    finish-registration: ${KAFKA_TOPIC_FINISH_REGISTRATION:finish-registration}
+    create-documents: ${KAFKA_TOPIC_CREATE_DOCUMENTS:create-documents}
+    send-documents: ${KAFKA_TOPIC_SEND_DOCUMENTS:send-documents}
+    send-ses: ${KAFKA_TOPIC_SEND_SES:send-ses}
+    credit-issued: ${KAFKA_TOPIC_CREDIT_ISSUED:credit-issued}
+    application-denied: ${KAFKA_TOPIC_APPLICATION_DENIED:application-denied}

@@ -1,10 +1,10 @@
 package ru.neoflex.learning.creaditpipeline.deal.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.neoflex.learning.creaditpipeline.deal.dictionary.ApplicationStatus;
+import ru.neoflex.learning.creaditpipeline.deal.dictionary.Theme;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Application;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Client;
 import ru.neoflex.learning.creaditpipeline.deal.entity.Credit;
@@ -18,6 +18,7 @@ import ru.neoflex.learning.creaditpipeline.deal.model.FinishRegistrationRequestD
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanApplicationRequestDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.LoanOfferDto;
 import ru.neoflex.learning.creaditpipeline.deal.model.ScoringDataDto;
+import ru.neoflex.learning.creaditpipeline.deal.properties.DossierTopicProperties;
 import ru.neoflex.learning.creaditpipeline.deal.repository.ApplicationRepository;
 import ru.neoflex.learning.creaditpipeline.deal.repository.CreditRepository;
 
@@ -39,6 +40,8 @@ public class DealService {
     private final CreditRepository creditRepository;
 
     private final ConveyorFeignClient conveyorFeignClient;
+    private final DossierProducer dossierProducer;
+    private final DossierTopicProperties dossierTopicProperties;
 
     public List<LoanOfferDto> application(LoanApplicationRequestDto loanApplicationRequestDto) {
         final Client client = clientMapper.toClient(loanApplicationRequestDto);
@@ -50,7 +53,7 @@ public class DealService {
     }
 
     public void calculate(Long applicationId, FinishRegistrationRequestDto finishRegistrationRequestDto) {
-        final Application application = getByIdOrThrow(applicationId);
+        final Application application = applicationRepository.getByIdOrThrow(applicationId);
         final ScoringDataDto scoringDataDto = conveyorMapper.toScoringDataDto(finishRegistrationRequestDto);
         final CreditDto creditDto = conveyorFeignClient.conveyorCalculation(scoringDataDto).getBody();
         final Credit credit = creditRepository.save(creditMapper.toCredit(creditDto));
@@ -60,15 +63,11 @@ public class DealService {
     }
 
     public void offer(LoanOfferDto loanOfferDto) {
-        final Application application = getByIdOrThrow(loanOfferDto.getApplicationId());
+        final Application application = applicationRepository.getByIdOrThrow(loanOfferDto.getApplicationId());
         updateStatus(application, ApplicationStatus.APPROVED);
         application.setAppliedOffer(applicationMapper.toLoanOffer(loanOfferDto));
-        applicationRepository.save(application);
-    }
-
-    private Application getByIdOrThrow(Long loanOfferDto) {
-        return applicationRepository.findById(loanOfferDto)
-            .orElseThrow(EntityNotFoundException::new);
+        final Application saved = applicationRepository.save(application);
+        dossierProducer.send(saved, Theme.FINISH_REGISTRATION, dossierTopicProperties.getFinishRegistration());
     }
 
     private void updateStatus(Application application, ApplicationStatus status) {

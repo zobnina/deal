@@ -89,6 +89,57 @@ paths:
       responses:
         204:
           description: 'OK'
+  /deal/document/{applicationId}/send:
+    post:
+      operationId: deal_document_application_id_send
+      summary: "запрос на отправку документов"
+      description: "запрос на отправку документов"
+      tags:
+        - Deal Controller
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        202:
+          description: Accepted
+  /deal/document/{applicationId}/sign:
+    post:
+      operationId: deal_document_application_id_sign
+      summary: "запрос на подписание документов"
+      description: "запрос на подписание документов"
+      tags:
+        - Deal Controller
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        202:
+          description: Accepted
+  /deal/document/{applicationId}/code:
+    post:
+      operationId: deal_document_application_id_code
+      summary: "подписание документов"
+      description: "подписание документов"
+      tags:
+        - Deal Controller
+      parameters:
+        - in: path
+          name: applicationId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        202:
+          description: Accepted
   /conveyor/offers:
     post:
       operationId: conveyor_offers

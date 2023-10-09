@@ -29,8 +29,8 @@ sonar {
         property "sonar.projectKey", "zobnina_deal"
         property "sonar.organization", "zobnina"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.coverage.exclusions", "'**/model/*','**/serialization/*','**/dictionary/*'"
-        property "sonar.exclusions", "'**/model/*','**/serialization/*','**/dictionary/*'"
+        property "sonar.coverage.exclusions", "**/model/*,**/serialization/*,**/dictionary/*"
+        property "sonar.exclusions", "**/model/*,**/serialization/*,**/dictionary/*"
     }
 }
 

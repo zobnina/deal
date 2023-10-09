@@ -4,6 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.3'
     id 'org.openapi.generator' version '7.0.1'
     id 'jacoco'
+    id "org.sonarqube" version "4.3.1.3277"
 }
 
 group = 'ru.neoflex.learning.creaditpipeline'
@@ -21,6 +22,14 @@ configurations {
 
 repositories {
     mavenCentral()
+}
+
+sonar {
+    properties {
+        property "sonar.projectKey", "zobnina_deal"
+        property "sonar.organization", "zobnina"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
 }
 
 dependencies {
@@ -83,6 +92,7 @@ compileJava.dependsOn tasks.named("openApiGenerate")
 test {
     finalizedBy jacocoTestReport
 }
+
 jacocoTestReport {
     dependsOn test
     reports {

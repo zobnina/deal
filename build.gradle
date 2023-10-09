@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.1.3'
     id 'io.spring.dependency-management' version '1.1.3'
     id 'org.openapi.generator' version '7.0.1'
+    id 'jacoco'
 }
 
 group = 'ru.neoflex.learning.creaditpipeline'
@@ -78,3 +79,14 @@ openApiGenerate {
 }
 
 compileJava.dependsOn tasks.named("openApiGenerate")
+
+test {
+    finalizedBy jacocoTestReport
+}
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = true
+    }
+}

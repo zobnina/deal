@@ -1,4 +1,4 @@
-name: Build
+name: Codecov
 
 on:
   push:
@@ -32,3 +32,8 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: build
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4-beta
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -1,0 +1,79 @@
+server:
+  error:
+    include-stacktrace: always
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: '@project.artifactId@'
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: ${DATASOURCE_SCHEMA:deal}
+        generate_statistics: ${GENERATE_STATISTICS:true}
+        jdbc:
+          batch_size: ${BATCH_SIZE:10}
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+  data:
+    jpa:
+      repositories:
+        enabled: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/deal?currentSchema=${spring.jpa.properties.hibernate.default_schema}}
+    username: ${DATASOURCE_USERNAME:postgres}
+    password: ${DATASOURCE_PASSWORD:postgres}
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: ${HIKARI_MIN_IDLE:10}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:10}
+      max-lifetime: ${HIKARI_MAX_LIFETIME:1000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT:10000}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:20000}
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/v1/v1.db-changelog.xml
+    database-change-log-table: changelog
+    database-change-log-lock-table: changeloglock
+    default-schema: ${DATASOURCE_SCHEMA:${spring.jpa.properties.hibernate.default_schema}}
+    liquibase-schema: ${DATASOURCE_LIQUIBASE_SCHEMA:${spring.jpa.properties.hibernate.default_schema}_liquibase}
+    user: ${LIQUIBASE_USERNAME:${spring.datasource.username}}
+    password: ${LIQUIBASE_PASSWORD:${spring.datasource.password}}
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: ${FEIGN_CONNECT_TIMEOUT:5000}
+            readTimeout: ${FEIGN_READ_TIMEOUT:5000}
+            loggerLevel: ${FEIGN_LOG_LEVEL:full}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: ru.neoflex.learning.creaditpipeline.deal.serialization.EmailMessageSerializer
+
+logging:
+  level:
+    ru.neoflex.learning.creditpipeline.deal: ${LOG_LEVEL:debug}
+    ru.neoflex.learning.creditpipeline.deal.feign: ${LOG_LEVEL:debug}
+
+application:
+  url:
+    conveyor: ${CONVEYOR_URL:http://localhost:8080}
+  topic:
+    finish-registration: ${KAFKA_TOPIC_FINISH_REGISTRATION:finish-registration}
+    create-documents: ${KAFKA_TOPIC_CREATE_DOCUMENTS:create-documents}
+    send-documents: ${KAFKA_TOPIC_SEND_DOCUMENTS:send-documents}
+    send-ses: ${KAFKA_TOPIC_SEND_SES:send-ses}
+    credit-issued: ${KAFKA_TOPIC_CREDIT_ISSUED:credit-issued}
+    application-denied: ${KAFKA_TOPIC_APPLICATION_DENIED:application-denied}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="v1_01_create_client_table_01" author="azobnina">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="client"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="client_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="client" remarks="Клиент">
+            <column name="id" remarks="ИД" type="bigint" defaultValueSequenceNext="client_id_seq">
+                <constraints primaryKey="true" primaryKeyName="client_id_pk"/>
+            </column>
+            <column name="last_name" remarks="Фамилия" type="varchar(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_name" remarks="Имя" type="varchar(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="middle_name" remarks="Отчество" type="varchar(30)"/>
+            <column name="birth_date" remarks="Дата рождения" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" remarks="Email адрес" type="varchar(70)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gender" remarks="Пол" type="varchar(10)"/>
+            <column name="marital_status" remarks="Семейное положение" type="varchar(15)"/>
+            <column name="dependent_amount" remarks="Количество иждивенцев" type="smallint"/>
+            <column name="passport" remarks="Паспорт" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+            <column name="employment" remarks="Работа" type="jsonb"/>
+            <column name="account" remarks="Счет клиента" type="varchar(20)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

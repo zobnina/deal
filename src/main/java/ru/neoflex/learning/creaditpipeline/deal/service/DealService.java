@@ -42,6 +42,7 @@ public class DealService {
     private final ConveyorFeignClient conveyorFeignClient;
     private final DossierProducer dossierProducer;
     private final DossierTopicProperties dossierTopicProperties;
+    private final StatusMetricService statusMetricService;
 
     public List<LoanOfferDto> application(LoanApplicationRequestDto loanApplicationRequestDto) {
         final Client client = clientMapper.toClient(loanApplicationRequestDto);
@@ -68,6 +69,7 @@ public class DealService {
         application.setAppliedOffer(applicationMapper.toLoanOffer(loanOfferDto));
         final Application saved = applicationRepository.save(application);
         dossierProducer.send(saved, Theme.FINISH_REGISTRATION, dossierTopicProperties.getFinishRegistration());
+        statusMetricService.incrementMetric(application.getStatus());
     }
 
     private void updateStatus(Application application, ApplicationStatus status) {

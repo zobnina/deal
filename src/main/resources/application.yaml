@@ -67,6 +67,12 @@ logging:
     ru.neoflex.learning.creditpipeline.deal: ${LOG_LEVEL:debug}
     ru.neoflex.learning.creditpipeline.deal.feign: ${LOG_LEVEL:debug}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
 application:
   url:
     conveyor: ${CONVEYOR_URL:http://localhost:8080}

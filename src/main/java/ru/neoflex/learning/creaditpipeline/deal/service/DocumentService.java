@@ -18,11 +18,13 @@ public class DocumentService {
     private final ApplicationRepository applicationRepository;
     private final DossierTopicProperties dossierTopicProperties;
     private final DossierProducer dossierProducer;
+    private final StatusMetricService statusMetricService;
 
     public void code(Long applicationId) {
         final Application application = applicationRepository.getByIdOrThrow(applicationId);
         applicationRepository.save(application.setStatus(ApplicationStatus.DOCUMENT_SIGNED).setSignDate(LocalDate.now()));
         dossierProducer.send(application, Theme.CREDIT_ISSUED, dossierTopicProperties.getCreditIssued());
+        statusMetricService.incrementMetric(application.getStatus());
     }
 
     public void send(Long applicationId) {

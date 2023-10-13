@@ -1,0 +1,71 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: '@project.artifactId@'
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: deal
+        generate_statistics: false
+        jdbc:
+          batch_size: 10
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+  data:
+    jpa:
+      repositories:
+        enabled: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://127.0.0.1:5432/deal?currentSchema=${spring.jpa.properties.hibernate.default_schema}
+    username: root
+    password:
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 10
+      max-lifetime: 1000
+      idle-timeout: 10000
+      connection-timeout: 20000
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/v1/v1.db-changelog.xml
+    database-change-log-table: changelog
+    database-change-log-lock-table: changeloglock
+    default-schema: ${spring.jpa.properties.hibernate.default_schema}
+    liquibase-schema: ${spring.jpa.properties.hibernate.default_schema}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 5000
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: ru.neoflex.learning.creaditpipeline.deal.serialization.EmailMessageSerializer
+
+application:
+  url:
+    conveyor: http://localhost:8082
+  topic:
+    finish-registration: finish-registration
+    create-documents: create-documents
+    send-documents: send-documents
+    send-ses: send-ses
+    credit-issued: credit-issued
+    application-denied: application-denied
